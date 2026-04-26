@@ -16,9 +16,10 @@ import { STORAGE_URL } from '../constants/api';
 const getImageUrl = (path: string) => {
   if (!path) return '';
   if (path.startsWith('http')) return path;
-  const baseUrl = STORAGE_URL.replace(/\/storage$/, '');
-  const cleanPath = path.startsWith('/') ? path : `/${path}`;
-  return `${baseUrl}${cleanPath}`;
+  // Strip duplicate /storage prefix from path if already present
+  const stripped = path.replace(/^\/?storage\//, '');
+  const cleanPath = stripped.startsWith('/') ? stripped : `/${stripped}`;
+  return `${STORAGE_URL}${cleanPath}`;
 };
 
 interface Post {

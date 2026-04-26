@@ -91,4 +91,9 @@ export const profileService = {
   getHistory: () => api.get('/profile/history'),
 };
 
+export const leaderboardService = {
+  get: (sort: 'highest' | 'lowest' = 'highest', categoryId?: number) =>
+    api.get('/leaderboard', { params: { sort, ...(categoryId ? { category_id: categoryId } : {}) } }),
+};
+
 export default api;

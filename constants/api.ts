@@ -1,11 +1,8 @@
-import { Platform } from 'react-native';
+const USE_LOCAL = true;
 
-/**
- * Use localhost for web testing, and the local IP for physical mobile devices.
- */
-const LOCAL_IP = Platform.OS === 'web' 
-  ? 'http://localhost:8000' 
-  : 'http://192.168.1.132:8000';
+const BASE_URL = USE_LOCAL
+  ? 'http://localhost:8000'
+  : 'https://lion-api.laravel.cloud';
 
-export const API_URL = `${LOCAL_IP}/api`;
-export const STORAGE_URL = `${LOCAL_IP}/storage`;
+export const API_URL = `${BASE_URL}/api`;
+export const STORAGE_URL = `${BASE_URL}/storage`;

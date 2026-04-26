@@ -80,6 +80,16 @@ export function HamburgerMenu() {
               <IconSymbol name="hand.thumbsup.fill" size={24} color="#1C1C1E" />
               <Text style={styles.menuItemText}>Voting Home</Text>
             </TouchableOpacity>
+
+            <View style={styles.separator} />
+
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => navigateTo('/leaderboard')}
+            >
+              <IconSymbol name="chart.bar.fill" size={24} color="#1C1C1E" />
+              <Text style={styles.menuItemText}>Leaderboard</Text>
+            </TouchableOpacity>
           </View>
         </TouchableOpacity>
       </Modal>
