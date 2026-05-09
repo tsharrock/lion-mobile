@@ -29,6 +29,8 @@ interface Post {
   title: string;
   description: string | null;
   image_path: string;
+  requires_attribution: boolean;
+  image_attribution: string | null;
   category: { id: number; name: string; slug: string };
   yes_votes: number;
   no_votes: number;

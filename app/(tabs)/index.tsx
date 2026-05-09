@@ -32,6 +32,8 @@ interface Post {
   title: string;
   description: string;
   image_path: string;
+  requires_attribution: boolean;
+  image_attribution: string | null;
   category: Category;
   yes_votes: number;
   no_votes: number;
@@ -184,11 +186,16 @@ export default function VoteScreen() {
         ) : currentPost ? (
           <View style={styles.card}>
             <View style={[styles.imageContainer, hasVoted && styles.imageContainerSmall]}>
-              <Image 
-                source={{ uri: getImageUrl(currentPost.image_path) }} 
+              <Image
+                source={{ uri: getImageUrl(currentPost.image_path) }}
                 style={styles.postImage}
                 resizeMode="cover"
               />
+              {currentPost.requires_attribution && currentPost.image_attribution && (
+                <View style={styles.attributionOverlay}>
+                  <Text style={styles.attributionText}>{currentPost.image_attribution}</Text>
+                </View>
+              )}
             </View>
 
             <View style={styles.infoContainer}>
@@ -332,6 +339,7 @@ const styles = StyleSheet.create({
     borderColor: '#1C1C1E',
     marginBottom: 24,
     backgroundColor: '#F2F2F7',
+    overflow: 'hidden',
   },
   postImage: {
     width: '100%',
@@ -438,6 +446,20 @@ const styles = StyleSheet.create({
   refreshButtonText: {
     fontSize: 16,
     fontWeight: '800',
+  },
+  attributionOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  attributionText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '500',
   },
   footer: {
     backgroundColor: '#000',

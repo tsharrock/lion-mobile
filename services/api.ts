@@ -89,6 +89,8 @@ export const voteService = {
 export const profileService = {
   getStats: () => api.get('/profile/stats'),
   getHistory: () => api.get('/profile/history'),
+  uploadImage: (formData: FormData) => api.post('/profile/image', formData),
+  deleteImage: () => api.delete('/profile/image'),
 };
 
 export const leaderboardService = {

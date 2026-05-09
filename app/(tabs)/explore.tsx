@@ -1,8 +1,12 @@
+import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
+  Image,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -22,6 +26,7 @@ interface User {
   name: string;
   email: string;
   created_at: string;
+  profile_image_path: string | null;
 }
 
 interface Stats {
@@ -59,6 +64,7 @@ export default function ProfileScreen() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [history, setHistory] = useState<VoteHistory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
 
   useEffect(() => {
     fetchProfileData();
@@ -87,6 +93,93 @@ export default function ProfileScreen() {
     return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   };
 
+  const pickAndUploadImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (result.canceled) return;
+
+    const asset = result.assets[0];
+    const formData = new FormData();
+
+    if (Platform.OS === 'web') {
+      const response = await fetch(asset.uri);
+      const blob = await response.blob();
+      formData.append('image', blob, 'profile.jpg');
+    } else {
+      const filename = asset.uri.split('/').pop() ?? 'profile.jpg';
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image/jpeg';
+      (formData as any).append('image', { uri: asset.uri, name: filename, type });
+    }
+
+    setIsUploadingImage(true);
+    try {
+      const res = await profileService.uploadImage(formData);
+      setUser((prev) => prev ? { ...prev, profile_image_path: res.data.profile_image_path } : prev);
+    } catch (error) {
+      Alert.alert('Upload failed', 'Could not upload image. Please try again.');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const handleDeleteImage = () => {
+    Alert.alert('Remove photo', 'Are you sure you want to remove your profile photo?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await profileService.deleteImage();
+            setUser((prev) => prev ? { ...prev, profile_image_path: null } : prev);
+          } catch (error) {
+            Alert.alert('Error', 'Could not remove photo. Please try again.');
+          }
+        },
+      },
+    ]);
+  };
+
+  const renderProfilePic = (size: 'large' | 'small') => {
+    const picStyle = size === 'large' ? styles.profilePicLarge : styles.profilePicSmall;
+    const picContent = user?.profile_image_path ? (
+      <Image source={{ uri: user.profile_image_path }} style={[picStyle, { resizeMode: 'cover' }]} />
+    ) : (
+      <View style={picStyle}>
+        <View style={styles.gridPlaceholder}>
+          <View style={styles.diagonal1} />
+          <View style={styles.diagonal2} />
+        </View>
+      </View>
+    );
+
+    if (size === 'small') return picContent;
+
+    return (
+      <TouchableOpacity
+        onPress={pickAndUploadImage}
+        disabled={isUploadingImage}
+        activeOpacity={0.85}
+        style={styles.profilePicTouchable}
+      >
+        {picContent}
+        <View style={styles.pencilBadge}>
+          {isUploadingImage ? (
+            <ActivityIndicator size="small" color="#FFF" />
+          ) : (
+            <IconSymbol name="pencil" size={16} color="#FFF" />
+          )}
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   if (isLoading) {
     return (
       <View style={[styles.container, styles.centered]}>
@@ -100,8 +193,8 @@ export default function ProfileScreen() {
       <View style={styles.header}>
         <Text style={styles.headerBrand}>Like It{"\n"}Or Not?</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <TouchableOpacity style={styles.editButton}>
-            <Text style={styles.editText}>Edit</Text>
+          <TouchableOpacity style={styles.editButton} onPress={pickAndUploadImage} disabled={isUploadingImage}>
+            <Text style={styles.editText}>{isUploadingImage ? '...' : 'Edit'}</Text>
           </TouchableOpacity>
           <HamburgerMenu />
         </View>
@@ -109,12 +202,12 @@ export default function ProfileScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.profileInfo}>
-          <View style={styles.profilePicLarge}>
-            <View style={styles.gridPlaceholder}>
-              <View style={styles.diagonal1} />
-              <View style={styles.diagonal2} />
-            </View>
-          </View>
+          {renderProfilePic('large')}
+          {user?.profile_image_path && (
+            <TouchableOpacity onPress={handleDeleteImage} style={styles.removePhotoButton}>
+              <Text style={styles.removePhotoText}>Remove photo</Text>
+            </TouchableOpacity>
+          )}
           <Text style={styles.userName}>{user?.name || 'User'}</Text>
 
           <View style={styles.detailsList}>
@@ -166,12 +259,7 @@ export default function ProfileScreen() {
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.statsView}>
-          <View style={styles.profilePicSmall}>
-            <View style={styles.gridPlaceholder}>
-              <View style={styles.diagonal1} />
-              <View style={styles.diagonal2} />
-            </View>
-          </View>
+          {renderProfilePic('small')}
           <Text style={styles.viewHeading}>Your Stats</Text>
           <Text style={styles.totalVotesCount}>{stats?.total_votes ?? 0} total votes</Text>
 
@@ -247,11 +335,8 @@ export default function ProfileScreen() {
       </View>
 
       <View style={styles.historyListContainer}>
-        <View style={[styles.profilePicSmall, { alignSelf: 'center', marginTop: 16 }]}>
-          <View style={styles.gridPlaceholder}>
-            <View style={styles.diagonal1} />
-            <View style={styles.diagonal2} />
-          </View>
+        <View style={{ alignSelf: 'center', marginTop: 16 }}>
+          {renderProfilePic('small')}
         </View>
         <Text style={[styles.viewHeading, { textAlign: 'center', marginBottom: 16 }]}>Your History</Text>
 
@@ -379,6 +464,16 @@ const styles = StyleSheet.create({
     height: 2,
     backgroundColor: '#1C1C1E',
     transform: [{ rotate: '-45deg' }],
+  },
+  removePhotoButton: {
+    marginTop: -12,
+    marginBottom: 8,
+  },
+  removePhotoText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#888',
+    textDecorationLine: 'underline',
   },
   userName: {
     fontSize: 32,

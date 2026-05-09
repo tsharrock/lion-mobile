@@ -32,6 +32,8 @@ interface LeaderboardPost {
   title: string;
   description: string | null;
   image_path: string;
+  requires_attribution: boolean;
+  image_attribution: string | null;
   category: { id: number; name: string; slug: string };
   yes_votes: number;
   no_votes: number;
@@ -86,11 +88,18 @@ export default function LeaderboardScreen() {
         </View>
 
         <ScrollView contentContainerStyle={styles.detailScroll}>
-          <Image
-            source={{ uri: getImageUrl(selectedPost.image_path) }}
-            style={styles.detailImage}
-            resizeMode="cover"
-          />
+          <View style={styles.detailImageContainer}>
+            <Image
+              source={{ uri: getImageUrl(selectedPost.image_path) }}
+              style={styles.detailImage}
+              resizeMode="cover"
+            />
+            {selectedPost.requires_attribution && selectedPost.image_attribution && (
+              <View style={styles.attributionOverlay}>
+                <Text style={styles.attributionText}>{selectedPost.image_attribution}</Text>
+              </View>
+            )}
+          </View>
 
           <View style={styles.detailBody}>
             <Text style={styles.detailTitle}>{selectedPost.title}</Text>
@@ -305,10 +314,29 @@ const styles = StyleSheet.create({
 
   // Detail view
   detailScroll: { paddingBottom: 40 },
-  detailImage: {
+  detailImageContainer: {
     width,
     height: width * 0.75,
+    overflow: 'hidden',
+  },
+  detailImage: {
+    width: '100%',
+    height: '100%',
     backgroundColor: '#E5E5EA',
+  },
+  attributionOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  attributionText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '500',
   },
   detailBody: {
     padding: 24,
